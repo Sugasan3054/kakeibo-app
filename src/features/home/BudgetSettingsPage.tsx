@@ -13,6 +13,7 @@ import { Icon } from '../../components/Icon/Icon';
 import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog';
 import { useToast } from '../../components/Toast/Toast';
 import { Loading } from '../../components/Loading/Loading';
+import { sortCategories } from '../../utils/category';
 import styles from './BudgetSettingsPage.module.css';
 
 export function BudgetSettingsPage() {
@@ -43,7 +44,8 @@ export function BudgetSettingsPage() {
         db.transactions.toArray(),
       ]);
 
-      setCategories(cats);
+      const sortedCats = sortCategories(cats);
+      setCategories(sortedCats);
       setBudgets(buds);
       setTransactions(txs);
 

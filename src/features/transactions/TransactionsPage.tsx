@@ -13,6 +13,7 @@ import { useToast } from '../../components/Toast/Toast';
 import { TransactionCalendar } from './TransactionCalendar';
 import { TransactionInputModal } from './TransactionInputModal';
 import { SearchBar } from '../../components/SearchBar/SearchBar';
+import { sortCategories } from '../../utils/category';
 import styles from './TransactionsPage.module.css';
 
 const formatDate = formatDateShort;
@@ -52,7 +53,7 @@ export function TransactionsPage() {
         db.accounts.toArray(),
       ]);
       setTransactions(txs);
-      setCategories(cats);
+      setCategories(sortCategories(cats));
       setAccounts(accs);
     } catch (err) {
       console.error('Failed to load transactions:', err);

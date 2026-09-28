@@ -10,6 +10,8 @@ import { Icon } from '../../components/Icon/Icon';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import styles from './ReportPage.module.css';
 
+import { sortCategories } from '../../utils/category';
+
 export function ReportPage() {
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -23,7 +25,7 @@ export function ReportPage() {
         db.categories.orderBy('order').toArray(),
       ]);
       setTransactions(txs);
-      setCategories(cats);
+      setCategories(sortCategories(cats));
     } catch (err) {
       console.error('Failed to load report data:', err);
     } finally {

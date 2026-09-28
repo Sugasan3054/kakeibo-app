@@ -23,6 +23,7 @@ import { CountUp } from '../../components/CountUp/CountUp';
 import { Loading } from '../../components/Loading/Loading';
 import { Icon } from '../../components/Icon/Icon';
 import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog';
+import { sortCategories } from '../../utils/category';
 import { useToast } from '../../components/Toast/Toast';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import styles from './HomePage.module.css';
@@ -55,13 +56,14 @@ export function HomePage() {
         db.categories.orderBy('order').toArray(),
         db.budgets.toArray(),
       ]);
+      const sortedCats = sortCategories(cats);
       setAccounts(accs);
       setTransactions(txs);
-      setCategories(cats);
+      setCategories(sortedCats);
       setBudgets(buds);
 
       // 保存済み予算をスライダーの初期値としてセット
-      const expenseCats = cats.filter((c) => c.kind === 'expense');
+      const expenseCats = sortedCats.filter((c) => c.kind === 'expense');
       const initialSim: Record<string, number> = {};
       expenseCats.forEach((cat) => {
         const b = buds.find((item) => item.categoryId === cat.id);

@@ -17,6 +17,34 @@ export class KakeiboDB extends Dexie {
       budgets: 'id, categoryId',
       settings: 'id',
     });
+
+    this.version(2).stores({
+      accounts: 'id, name, type, createdAt',
+      transactions: 'id, kind, accountId, categoryId, date, createdAt',
+      categories: 'id, kind, order, isCustom',
+      budgets: 'id, categoryId',
+      settings: 'id',
+    }).upgrade(async (tx) => {
+      // 既存の分類に isCustom: false を設定
+      await tx.table('categories').toCollection().modify((category) => {
+        if (category.isCustom === undefined) {
+          category.isCustom = false;
+        }
+        if (!category.createdAt) {
+          category.createdAt = new Date().toISOString();
+        }
+      });
+      // 既存の設定に 'system' があれば 'light' または 'dark' に移行
+      await tx.table('settings').toCollection().modify((settings) => {
+        if (settings.theme === 'system' || !settings.theme) {
+          const prefersDark =
+            typeof window !== 'undefined' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          settings.theme = prefersDark ? 'dark' : 'light';
+        }
+      });
+    });
   }
 }
 

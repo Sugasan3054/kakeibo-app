@@ -31,6 +31,8 @@ export interface Category {
   name: string;
   color: string;
   order: number;
+  isCustom?: boolean;
+  createdAt?: string;
 }
 
 export interface Budget {
@@ -42,7 +44,7 @@ export interface Budget {
 
 export interface Settings {
   id: string;
-  theme: 'light' | 'dark' | 'system';
+  theme: 'light' | 'dark';
   passcodeEnabled: boolean;
   passcodeHash: string | null;
   passcodeSalt: string | null;

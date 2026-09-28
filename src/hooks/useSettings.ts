@@ -4,7 +4,7 @@ import type { Settings } from '../db/models';
 
 const DEFAULT_SETTINGS: Settings = {
   id: 'app-settings',
-  theme: 'system',
+  theme: 'light',
   passcodeEnabled: false,
   passcodeHash: null,
   passcodeSalt: null,
@@ -20,7 +20,17 @@ export function useSettings() {
   const loadSettings = useCallback(async () => {
     try {
       const s = await db.settings.get('app-settings');
-      if (s) setSettings(s);
+      if (s) {
+        if ((s.theme as string) === 'system' || !s.theme) {
+          const prefersDark =
+            typeof window !== 'undefined' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          s.theme = prefersDark ? 'dark' : 'light';
+          await db.settings.put(s);
+        }
+        setSettings(s);
+      }
     } catch (err) {
       console.error('Failed to load settings:', err);
     } finally {

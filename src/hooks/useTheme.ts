@@ -1,38 +1,31 @@
 import { useEffect, useCallback } from 'react';
 import { useSettings } from './useSettings';
+import { applyTheme, resolveInitialTheme, type ThemeMode } from '../utils/theme';
 
 export function useTheme() {
   const { settings, updateSettings } = useSettings();
 
-  const applyTheme = useCallback((theme: 'light' | 'dark' | 'system') => {
-    let resolvedTheme: 'light' | 'dark';
-
-    if (theme === 'system') {
-      resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
-    } else {
-      resolvedTheme = theme;
-    }
-
-    document.documentElement.setAttribute('data-theme', resolvedTheme);
-  }, []);
-
   useEffect(() => {
-    applyTheme(settings.theme);
+    const prefersDark =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const resolved = resolveInitialTheme(settings.theme, prefersDark);
 
-    if (settings.theme === 'system') {
-      const mql = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = () => applyTheme('system');
-      mql.addEventListener('change', handler);
-      return () => mql.removeEventListener('change', handler);
+    applyTheme(resolved);
+
+    if ((settings.theme as string) === 'system' || settings.theme !== resolved) {
+      updateSettings({ theme: resolved });
     }
-  }, [settings.theme, applyTheme]);
+  }, [settings.theme, updateSettings]);
 
-  const setTheme = useCallback(async (theme: 'light' | 'dark' | 'system') => {
-    applyTheme(theme);
-    await updateSettings({ theme });
-  }, [applyTheme, updateSettings]);
+  const setTheme = useCallback(
+    async (theme: ThemeMode) => {
+      applyTheme(theme);
+      await updateSettings({ theme });
+    },
+    [updateSettings]
+  );
 
   return { theme: settings.theme, setTheme };
 }

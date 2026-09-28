@@ -26,15 +26,20 @@ const INCOME_CATEGORIES: Omit<Category, 'id'>[] = [
 
 export async function seedDatabase(): Promise<void> {
   const categoryCount = await db.categories.count();
+  const now = new Date().toISOString();
   if (categoryCount === 0) {
     const allCategories: Category[] = [
       ...EXPENSE_CATEGORIES.map((c) => ({
         ...c,
         id: crypto.randomUUID(),
+        isCustom: false,
+        createdAt: now,
       })),
       ...INCOME_CATEGORIES.map((c) => ({
         ...c,
         id: crypto.randomUUID(),
+        isCustom: false,
+        createdAt: now,
       })),
     ];
     await db.categories.bulkAdd(allCategories);
@@ -42,7 +47,6 @@ export async function seedDatabase(): Promise<void> {
 
   const accountCount = await db.accounts.count();
   if (accountCount === 0) {
-    const now = new Date().toISOString();
     const defaultAccount: Account = {
       id: crypto.randomUUID(),
       name: '財布',
@@ -58,9 +62,15 @@ export async function seedDatabase(): Promise<void> {
 
   const settingsCount = await db.settings.count();
   if (settingsCount === 0) {
+    const prefersDark =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme: 'light' | 'dark' = prefersDark ? 'dark' : 'light';
+
     const defaultSettings: Settings = {
       id: 'app-settings',
-      theme: 'system',
+      theme: initialTheme,
       passcodeEnabled: false,
       passcodeHash: null,
       passcodeSalt: null,

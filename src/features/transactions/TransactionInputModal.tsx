@@ -8,6 +8,7 @@ import { SegmentControl } from '../../components/SegmentControl/SegmentControl';
 import { Calendar } from '../../components/Calendar/Calendar';
 import { Icon } from '../../components/Icon/Icon';
 import { useToast } from '../../components/Toast/Toast';
+import { CategorySelect } from '../../components/CategorySelect/CategorySelect';
 import styles from './TransactionInputModal.module.css';
 
 interface TransactionInputModalProps {
@@ -67,7 +68,12 @@ export function TransactionInputModal({
     loadData();
   }, [isOpen, editTransaction]);
 
-  const filteredCategories = categories.filter((c) => c.kind === kind);
+  const handleCategoryAdded = (newCat: Category) => {
+    setCategories((prev) => [...prev, newCat]);
+    setCategoryId(newCat.id);
+    setErrors((prev) => ({ ...prev, categoryId: '' }));
+    showToast(`分類「${newCat.name}」を追加しました`);
+  };
 
   const handleAmountChange = useCallback((value: string) => {
     // カンマや不正な文字を除去して数値のみに
@@ -172,22 +178,22 @@ export function TransactionInputModal({
 
         {/* 分類 */}
         <div className={styles.field}>
-          <label htmlFor="tx-category" className={styles.label}>
+          <label id="tx-category-label" htmlFor="tx-category" className={styles.label}>
             {kind === 'expense' ? '支出' : '収入'}分類 <span className={styles.required}>必須</span>
           </label>
-          <select
+          <CategorySelect
             id="tx-category"
-            className={`${styles.select} ${errors.categoryId ? styles.inputError : ''}`}
+            categories={categories}
             value={categoryId}
-            onChange={(e) => { setCategoryId(e.target.value); setErrors((prev) => ({ ...prev, categoryId: '' })); }}
-            aria-invalid={!!errors.categoryId}
+            onChange={(val) => {
+              setCategoryId(val);
+              setErrors((prev) => ({ ...prev, categoryId: '' }));
+            }}
+            kind={kind}
+            hasError={!!errors.categoryId}
+            onCategoryAdded={handleCategoryAdded}
             aria-describedby={errors.categoryId ? 'category-error' : undefined}
-          >
-            <option value="">選択してください</option>
-            {filteredCategories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
+          />
           {errors.categoryId && <p id="category-error" className={styles.error} role="alert">{errors.categoryId}</p>}
         </div>
 
