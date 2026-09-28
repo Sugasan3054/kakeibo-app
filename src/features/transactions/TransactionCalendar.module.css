@@ -1,0 +1,172 @@
+.calendarCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-1);
+}
+
+.title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.navBtn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.navBtn:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.navBtn:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.weekday {
+  padding: var(--space-1) 0;
+}
+
+.sunday {
+  color: var(--color-expense);
+}
+
+.saturday {
+  color: var(--color-primary);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.emptyCell {
+  min-height: 52px;
+}
+
+.dayCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 52px;
+  min-width: 40px;
+  padding: 4px 1px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  outline: none;
+}
+
+.dayCell:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.dayCell:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  z-index: 2;
+}
+
+.dayNumber {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.sunCell .dayNumber {
+  color: var(--color-expense);
+}
+
+.satCell .dayNumber {
+  color: var(--color-primary);
+}
+
+/* 今日の日付強調 */
+.today .dayNumber {
+  background-color: var(--color-primary);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-bold);
+}
+
+/* 選択された日付 */
+.selected {
+  background-color: var(--color-primary-light) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.selected .dayNumber {
+  font-weight: var(--font-weight-bold);
+}
+
+.amountsWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 100%;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+.incomeAmount,
+.expenseAmount {
+  font-size: 9px;
+  line-height: 1.1;
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  letter-spacing: -0.03em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.incomeAmount {
+  color: var(--color-income);
+}
+
+.expenseAmount {
+  color: var(--color-expense);
+}

@@ -1,0 +1,25 @@
+.fab {
+  position: fixed;
+  bottom: calc(var(--safe-area-bottom, 0px) + 88px);
+  right: max(var(--space-4), calc((100vw - min(calc(100% - 32px), 420px)) / 2));
+  width: var(--fab-size);
+  height: var(--fab-size);
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary), #4da6ff);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg), 0 4px 16px rgba(26, 115, 232, 0.3);
+  z-index: 850;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.fab:hover {
+  transform: scale(1.08);
+  box-shadow: var(--shadow-xl), 0 6px 20px rgba(26, 115, 232, 0.4);
+}
+
+.fab:active {
+  transform: scale(0.95);
+}

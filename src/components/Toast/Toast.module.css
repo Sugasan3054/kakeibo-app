@@ -1,0 +1,89 @@
+.container {
+  position: fixed;
+  bottom: calc(var(--tab-bar-height) + var(--safe-area-bottom) + var(--space-8));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: calc(100% - var(--space-8));
+  max-width: var(--max-width);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-text-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--shadow-lg);
+  animation: fadeInUp var(--transition-base) ease-out;
+  pointer-events: auto;
+}
+
+.success { border-left: 3px solid var(--color-success); }
+.error { border-left: 3px solid var(--color-error); }
+.info { border-left: 3px solid var(--color-primary); }
+
+.icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.success .icon { color: var(--color-success); }
+.error .icon { color: var(--color-error); }
+.info .icon { color: var(--color-primary); }
+
+.message {
+  flex: 1;
+}
+
+.action {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  transition: background-color var(--transition-fast);
+  min-height: 32px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-inverse);
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+  font-size: var(--font-size-xs);
+}
+
+.close:hover {
+  opacity: 1;
+}
