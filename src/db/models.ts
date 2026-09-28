@@ -51,6 +51,8 @@ export interface Settings {
   passcodeIv: string | null;
   expectedMonthlyIncome: number | null; // null可（想定月収）
   initialLaunchDone: boolean;
+  passcodeFailedAttempts?: number; // 連続誤入力回数
+  passcodeLockedUntil?: string | null; // ロック解除予定日時（ISO文字列）
 }
 
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {

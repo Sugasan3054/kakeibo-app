@@ -7,12 +7,7 @@ import { ToastProvider } from './components/Toast/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { AppShell } from './components/Layout/AppShell';
 import { LockScreen } from './components/LockScreen/LockScreen';
-import { HomePage } from './features/home/HomePage';
-import { BudgetSettingsPage } from './features/home/BudgetSettingsPage';
-import { TransactionsPage } from './features/transactions/TransactionsPage';
-import { ReportPage } from './features/report/ReportPage';
-import { AccountsPage } from './features/accounts/AccountsPage';
-import { SettingsPage } from './features/settings/SettingsPage';
+import { APP_ROUTES } from './config/routes';
 import { Loading } from './components/Loading/Loading';
 import { PwaPrompt } from './components/PwaPrompt/PwaPrompt';
 import { OnboardingModal } from './components/Onboarding/OnboardingModal';
@@ -56,12 +51,9 @@ function AppContent() {
       <BrowserRouter>
         <Routes>
           <Route element={<AppShell />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/home/budget" element={<BudgetSettingsPage />} />
-            <Route path="/transactions" element={<TransactionsPage />} />
-            <Route path="/report" element={<ReportPage />} />
-            <Route path="/accounts" element={<AccountsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            {APP_ROUTES.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
