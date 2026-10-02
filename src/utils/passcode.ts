@@ -1,5 +1,5 @@
 import type { KakeiboDB } from '../db/database';
-import { verifyPasscode, decryptData } from './crypto';
+import { verifyPasscode, decryptData, hashPasscode, encryptData } from './crypto';
 
 export const MAX_LOCK_WAIT_SECONDS = 15 * 60; // 上限15分（900秒）
 export const LOCK_TRIGGER_ATTEMPTS = 5; // 5回連続誤入力でロック開始
@@ -193,3 +193,61 @@ export async function decryptAndRemovePasscode(
     });
   });
 }
+
+/**
+ * パスコードを変更し、必要に応じて暗号化メモを再暗号化する
+ */
+export async function changePasscodeWithReEncryption(
+  dbInstance: KakeiboDB,
+  currentPasscode: string,
+  newPasscode: string
+): Promise<{ hash: string; salt: string }> {
+  const settings = await dbInstance.settings.get('app-settings');
+  if (!settings || !settings.passcodeHash || !settings.passcodeSalt) {
+    throw new Error('パスコードが設定されていません');
+  }
+
+  const isValid = await verifyPasscodeMatch(
+    currentPasscode,
+    settings.passcodeHash,
+    settings.passcodeSalt
+  );
+  if (!isValid) {
+    throw new Error('現在のパスコードが正しくありません');
+  }
+
+  const { hash: newHash, salt: newSalt } = await hashPasscode(newPasscode);
+
+  const transactions = await dbInstance.transactions.toArray();
+  const updates: { id: string; memo: string }[] = [];
+
+  for (const tx of transactions) {
+    if (tx.memo && isEncryptedData(tx.memo)) {
+      try {
+        const payload = extractEncryptedPayload(tx.memo);
+        const decryptedMemo = await decryptData(payload, currentPasscode, settings.passcodeSalt);
+        const reEncrypted = await encryptData(decryptedMemo, newPasscode, newSalt);
+        updates.push({ id: tx.id, memo: 'enc:' + reEncrypted });
+      } catch (err) {
+        console.warn(`Failed to re-encrypt memo for ${tx.id}:`, err);
+      }
+    }
+  }
+
+  await dbInstance.transaction('rw', [dbInstance.transactions, dbInstance.settings], async () => {
+    for (const update of updates) {
+      await dbInstance.transactions.update(update.id, { memo: update.memo });
+    }
+
+    await dbInstance.settings.update('app-settings', {
+      passcodeEnabled: true,
+      passcodeHash: newHash,
+      passcodeSalt: newSalt,
+      passcodeFailedAttempts: 0,
+      passcodeLockedUntil: null,
+    });
+  });
+
+  return { hash: newHash, salt: newSalt };
+}
+

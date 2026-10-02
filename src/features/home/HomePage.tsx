@@ -25,7 +25,8 @@ import { Icon } from '../../components/Icon/Icon';
 import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog';
 import { sortCategories } from '../../utils/category';
 import { useToast } from '../../components/Toast/Toast';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { sortByAmountDesc } from '../../utils/chart';
+import { CategoryPieChart } from '../../components/PieChart/CategoryPieChart';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
@@ -115,15 +116,14 @@ export function HomePage() {
   );
 
   const chartData = useMemo(() => {
-    return expenseCategories
-      .map((cat) => ({
-        name: cat.name,
-        value: expenseByCategory.get(cat.id) || 0,
-        color: cat.color,
-        id: cat.id,
-      }))
-      .filter((d) => d.value > 0)
-      .sort((a, b) => b.value - a.value);
+    const rawItems = expenseCategories.map((cat) => ({
+      name: cat.name,
+      value: expenseByCategory.get(cat.id) || 0,
+      color: cat.color,
+      id: cat.id,
+      order: cat.order,
+    }));
+    return sortByAmountDesc(rawItems);
   }, [expenseCategories, expenseByCategory]);
 
   // 過去3か月の平均収入
@@ -307,38 +307,19 @@ export function HomePage() {
         ) : (
           <div className={styles.chartCard}>
             <div className={styles.chartWrapper}>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={2}
-                    dataKey="value"
-                    animationBegin={0}
-                    animationDuration={800}
-                  >
-                    {chartData.map((entry) => (
-                      <Cell key={entry.id} fill={entry.color} stroke="none" />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: any) => [formatYen(Number(value) || 0), '支出']}
-                    contentStyle={{
-                      backgroundColor: 'var(--color-surface)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className={styles.chartCenter}>
-                <span className={styles.chartCenterLabel}>今月の支出</span>
-                <span className={styles.chartCenterAmount}>{formatYen(monthlyExpenseTotal)}</span>
-              </div>
+              <CategoryPieChart
+                data={chartData}
+                height={220}
+                innerRadius={60}
+                outerRadius={90}
+                tooltipLabel="支出"
+                centerContent={
+                  <div className={styles.chartCenter}>
+                    <span className={styles.chartCenterLabel}>今月の支出</span>
+                    <span className={styles.chartCenterAmount}>{formatYen(monthlyExpenseTotal)}</span>
+                  </div>
+                }
+              />
             </div>
             <ul className={styles.legend} aria-label="支出分類">
               {chartData.map((entry) => (

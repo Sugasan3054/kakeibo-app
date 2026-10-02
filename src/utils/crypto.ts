@@ -65,6 +65,14 @@ async function deriveKey(passcode: string, salt: Uint8Array): Promise<CryptoKey>
 }
 
 /**
+ * パスコードからPBKDF2で暗号鍵を導出する（外部利用用）
+ */
+export async function deriveCryptoKey(passcode: string, storedSalt: string): Promise<CryptoKey> {
+  const salt = base64ToBytes(storedSalt);
+  return deriveKey(passcode, salt);
+}
+
+/**
  * パスコードのハッシュを生成する（検証用）
  */
 export async function hashPasscode(passcode: string): Promise<{ hash: string; salt: string }> {

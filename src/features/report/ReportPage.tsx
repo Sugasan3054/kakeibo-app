@@ -7,7 +7,8 @@ import { formatYen, calcPercentage } from '../../utils/format';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Loading } from '../../components/Loading/Loading';
 import { Icon } from '../../components/Icon/Icon';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { CategoryPieChart } from '../../components/PieChart/CategoryPieChart';
+import { sortByAmountDesc } from '../../utils/chart';
 import styles from './ReportPage.module.css';
 
 import { sortCategories } from '../../utils/category';
@@ -43,25 +44,25 @@ export function ReportPage() {
   const expenseCategories = categories.filter((c) => c.kind === 'expense');
   const incomeCategories = categories.filter((c) => c.kind === 'income');
 
-  const expenseChartData = expenseCategories
-    .map((cat) => ({
+  const expenseChartData = sortByAmountDesc(
+    expenseCategories.map((cat) => ({
       name: cat.name,
       value: expenseByCategory.get(cat.id) || 0,
       color: cat.color,
       id: cat.id,
+      order: cat.order,
     }))
-    .filter((d) => d.value > 0)
-    .sort((a, b) => b.value - a.value);
+  );
 
-  const incomeChartData = incomeCategories
-    .map((cat) => ({
+  const incomeChartData = sortByAmountDesc(
+    incomeCategories.map((cat) => ({
       name: cat.name,
       value: incomeByCategory.get(cat.id) || 0,
       color: cat.color,
       id: cat.id,
+      order: cat.order,
     }))
-    .filter((d) => d.value > 0)
-    .sort((a, b) => b.value - a.value);
+  );
 
   const hasData = expenseChartData.length > 0 || incomeChartData.length > 0;
 
@@ -116,34 +117,13 @@ export function ReportPage() {
               </div>
 
               <div className={styles.chartWrapper}>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={expenseChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
-                      paddingAngle={2}
-                      dataKey="value"
-                      animationBegin={0}
-                      animationDuration={800}
-                    >
-                      {expenseChartData.map((entry) => (
-                        <Cell key={entry.id} fill={entry.color} stroke="none" />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: any) => [formatYen(Number(value) || 0), '金額']}
-                      contentStyle={{
-                        backgroundColor: 'var(--color-surface)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <CategoryPieChart
+                  data={expenseChartData}
+                  height={200}
+                  innerRadius={55}
+                  outerRadius={85}
+                  tooltipLabel="支出"
+                />
               </div>
 
               <ul className={styles.breakdown} aria-label="支出分類一覧">
@@ -175,34 +155,13 @@ export function ReportPage() {
               </div>
 
               <div className={styles.chartWrapper}>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={incomeChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
-                      paddingAngle={2}
-                      dataKey="value"
-                      animationBegin={0}
-                      animationDuration={800}
-                    >
-                      {incomeChartData.map((entry) => (
-                        <Cell key={entry.id} fill={entry.color} stroke="none" />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: any) => [formatYen(Number(value) || 0), '金額']}
-                      contentStyle={{
-                        backgroundColor: 'var(--color-surface)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <CategoryPieChart
+                  data={incomeChartData}
+                  height={200}
+                  innerRadius={55}
+                  outerRadius={85}
+                  tooltipLabel="収入"
+                />
               </div>
 
               <ul className={styles.breakdown} aria-label="収入分類一覧">

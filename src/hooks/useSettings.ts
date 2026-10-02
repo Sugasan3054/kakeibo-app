@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useContext } from 'react';
 import { db } from '../db/database';
 import type { Settings } from '../db/models';
+import { SettingsContext } from '../contexts/SettingsContext';
 
 const DEFAULT_SETTINGS: Settings = {
   id: 'app-settings',
@@ -14,6 +15,20 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 export function useSettings() {
+  const context = useContext(SettingsContext);
+  if (context) {
+    return {
+      settings: context.settings,
+      loading: context.loading,
+      inMemoryKey: context.inMemoryKey,
+      updateSettings: context.updateSettings,
+      setPasscode: context.setPasscode,
+      changePasscode: context.changePasscode,
+      removePasscode: context.removePasscode,
+      reload: context.reloadSettings,
+    };
+  }
+
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
@@ -48,5 +63,14 @@ export function useSettings() {
     setSettings(newSettings);
   }, [settings]);
 
-  return { settings, loading, updateSettings, reload: loadSettings };
+  return {
+    settings,
+    loading,
+    inMemoryKey: null,
+    updateSettings,
+    setPasscode: async () => {},
+    changePasscode: async () => {},
+    removePasscode: async () => {},
+    reload: loadSettings,
+  };
 }

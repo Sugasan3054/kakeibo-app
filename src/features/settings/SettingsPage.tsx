@@ -2,10 +2,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../db/database';
 import { useSettings } from '../../hooks/useSettings';
-import { hashPasscode } from '../../utils/crypto';
 import { useToast } from '../../components/Toast/Toast';
 import { Icon } from '../../components/Icon/Icon';
 import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog';
+import { PasscodeSheet } from './PasscodeSheet';
 import { insertSampleData, resetAllData } from '../../utils/sampleData';
 import { applyTheme } from '../../utils/theme';
 import {
@@ -13,11 +13,6 @@ import {
   deleteCategoryWithRelocation,
   CATEGORY_COLOR_PALETTE,
 } from '../../utils/category';
-import {
-  processPasscodeAttempt,
-  getRemainingLockSeconds,
-  decryptAndRemovePasscode,
-} from '../../utils/passcode';
 import type { Category } from '../../db/models';
 import { GITHUB_URL, ISSUES_URL } from '../../config/links';
 import styles from './SettingsPage.module.css';
@@ -30,27 +25,9 @@ export function SettingsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryTab, setCategoryTab] = useState<'expense' | 'income'>('expense');
 
-  // パスコード初期設定用状態
-  const [showPasscodeForm, setShowPasscodeForm] = useState(false);
-  const [passcode, setPasscode] = useState('');
-  const [passcodeConfirm, setPasscodeConfirm] = useState('');
-  const [passcodeError, setPasscodeError] = useState('');
-  const [showInitPassword, setShowInitPassword] = useState(false);
-
-  // パスコード解除・変更用状態
-  const [authModalMode, setAuthModalMode] = useState<'none' | 'remove' | 'change'>('none');
-  const [authStep, setAuthStep] = useState<'verify' | 'confirm_remove' | 'new_passcode'>('verify');
-  const [verifyInput, setVerifyInput] = useState('');
-  const [verifyError, setVerifyError] = useState('');
-  const [showVerifyPassword, setShowVerifyPassword] = useState(false);
-  const [verifiedPasscode, setVerifiedPasscode] = useState('');
-  const [lockRemainingSeconds, setLockRemainingSeconds] = useState(0);
-
-  // 新規パスコード変更用状態
-  const [newPasscode, setNewPasscode] = useState('');
-  const [newPasscodeConfirm, setNewPasscodeConfirm] = useState('');
-  const [newPasscodeError, setNewPasscodeError] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
+  // パスコードボトムシート状態
+  const [passcodeSheetOpen, setPasscodeSheetOpen] = useState(false);
+  const [passcodeSheetTab, setPasscodeSheetTab] = useState<'change' | 'remove'>('change');
 
   // テスト用確認ダイアログ
   const [showSampleConfirm, setShowSampleConfirm] = useState(false);
@@ -69,28 +46,7 @@ export function SettingsPage() {
   const [relocateDestId, setRelocateDestId] = useState<string>('');
   const [showDirectDeleteConfirm, setShowDirectDeleteConfirm] = useState(false);
 
-  // ロック残秒数カウントダウン監視
-  useEffect(() => {
-    if (authModalMode === 'none') return;
 
-    const checkLock = async () => {
-      const s = await db.settings.get('app-settings');
-      setLockRemainingSeconds(getRemainingLockSeconds(s?.passcodeLockedUntil));
-    };
-    checkLock();
-
-    const timer = setInterval(() => {
-      setLockRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          checkLock();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [authModalMode]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -111,121 +67,7 @@ export function SettingsPage() {
     await updateSettings({ theme });
   };
 
-  const handleSetPasscode = async () => {
-    if (passcode.length < 4 || passcode.length > 6) {
-      setPasscodeError('パスコードは4〜6桁で設定してください');
-      return;
-    }
-    if (!/^\d+$/.test(passcode)) {
-      setPasscodeError('パスコードは数字のみで設定してください');
-      return;
-    }
-    if (passcode !== passcodeConfirm) {
-      setPasscodeError('パスコードが一致しません');
-      return;
-    }
 
-    try {
-      const { hash, salt } = await hashPasscode(passcode);
-      await updateSettings({
-        passcodeEnabled: true,
-        passcodeHash: hash,
-        passcodeSalt: salt,
-        passcodeFailedAttempts: 0,
-        passcodeLockedUntil: null,
-      });
-      setShowPasscodeForm(false);
-      setPasscode('');
-      setPasscodeConfirm('');
-      showToast('パスコードを設定しました');
-    } catch (err) {
-      console.error('Failed to set passcode:', err);
-      showToast('パスコードの設定に失敗しました', { type: 'error' });
-    }
-  };
-
-  // パスコード照合処理（解除または変更時）
-  const handleVerifyCurrentPasscode = async (e?: React.SyntheticEvent) => {
-    if (e) e.preventDefault();
-    if (!verifyInput || lockRemainingSeconds > 0) return;
-
-    setVerifyError('');
-    try {
-      const result = await processPasscodeAttempt(db, verifyInput);
-      if (result.success) {
-        setVerifiedPasscode(verifyInput);
-        if (authModalMode === 'remove') {
-          setAuthStep('confirm_remove');
-        } else if (authModalMode === 'change') {
-          setAuthStep('new_passcode');
-          setNewPasscode('');
-          setNewPasscodeConfirm('');
-          setNewPasscodeError('');
-        }
-        setVerifyInput('');
-      } else {
-        setVerifyError(result.error || 'パスコードが正しくありません');
-        setVerifyInput('');
-        if (result.remainingSeconds > 0) {
-          setLockRemainingSeconds(result.remainingSeconds);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to verify passcode attempt:', err);
-      setVerifyError('認証に失敗しました');
-    }
-  };
-
-  // パスコード解除確定時のデータ復号と設定解除
-  const handleExecuteRemovePasscode = async () => {
-    try {
-      await decryptAndRemovePasscode(db, verifiedPasscode);
-      setAuthModalMode('none');
-      setAuthStep('verify');
-      setVerifiedPasscode('');
-      showToast('パスコードを解除しました');
-    } catch (err) {
-      console.error('Failed to remove passcode:', err);
-      showToast('パスコードの解除に失敗しました', { type: 'error' });
-    }
-  };
-
-  // パスコード変更確定
-  const handleSaveNewPasscode = async (e?: React.SyntheticEvent) => {
-    if (e) e.preventDefault();
-    if (newPasscode.length < 4 || newPasscode.length > 6) {
-      setNewPasscodeError('パスコードは4〜6桁で設定してください');
-      return;
-    }
-    if (!/^\d+$/.test(newPasscode)) {
-      setNewPasscodeError('パスコードは数字のみで設定してください');
-      return;
-    }
-    if (newPasscode !== newPasscodeConfirm) {
-      setNewPasscodeError('パスコードが一致しません');
-      return;
-    }
-
-    try {
-      const { hash, salt } = await hashPasscode(newPasscode);
-      await updateSettings({
-        passcodeEnabled: true,
-        passcodeHash: hash,
-        passcodeSalt: salt,
-        passcodeFailedAttempts: 0,
-        passcodeLockedUntil: null,
-      });
-      setAuthModalMode('none');
-      setAuthStep('verify');
-      setNewPasscode('');
-      setNewPasscodeConfirm('');
-      setVerifiedPasscode('');
-      showToast('パスコードを変更しました');
-    } catch (err) {
-      console.error('Failed to change passcode:', err);
-      setNewPasscodeError('パスコードの変更に失敗しました');
-    }
-  };
 
   // 分類編集の開始
   const handleOpenEditCategory = (cat: Category) => {
@@ -423,10 +265,8 @@ export function SettingsPage() {
                 type="button"
                 className={styles.secondaryActionBtn}
                 onClick={() => {
-                  setAuthModalMode('change');
-                  setAuthStep('verify');
-                  setVerifyInput('');
-                  setVerifyError('');
+                  setPasscodeSheetTab('change');
+                  setPasscodeSheetOpen(true);
                 }}
               >
                 パスコードを変更
@@ -435,10 +275,8 @@ export function SettingsPage() {
                 type="button"
                 className={styles.dangerBtn}
                 onClick={() => {
-                  setAuthModalMode('remove');
-                  setAuthStep('verify');
-                  setVerifyInput('');
-                  setVerifyError('');
+                  setPasscodeSheetTab('remove');
+                  setPasscodeSheetOpen(true);
                 }}
               >
                 設定解除
@@ -446,87 +284,13 @@ export function SettingsPage() {
             </div>
           </div>
         ) : (
-          <>
-            {!showPasscodeForm ? (
-              <button className={styles.actionBtn} onClick={() => setShowPasscodeForm(true)}>
-                パスコードを設定
-              </button>
-            ) : (
-              <div className={styles.passcodeForm}>
-                <p className={styles.warning}>
-                  <Icon name="attention" variant="fill" size={16} /> パスコードを忘れるとデータを復元できません
-                </p>
-                <div className={styles.field}>
-                  <label htmlFor="passcode" className={styles.label}>
-                    パスコード（4〜6桁の数字）
-                  </label>
-                  <div className={styles.passwordInputWrap}>
-                    <input
-                      id="passcode"
-                      type={showInitPassword ? 'text' : 'password'}
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      className={`${styles.input} ${styles.passwordInput}`}
-                      value={passcode}
-                      onChange={(e) => { setPasscode(e.target.value.replace(/[^0-9]/g, '')); setPasscodeError(''); }}
-                      maxLength={6}
-                      placeholder="••••"
-                      autoFocus
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className={styles.passwordToggleBtn}
-                      onClick={() => setShowInitPassword(!showInitPassword)}
-                      aria-label={showInitPassword ? 'パスコードを隠す' : 'パスコードを表示する'}
-                    >
-                      {showInitPassword ? '非表示' : '表示'}
-                    </button>
-                  </div>
-                </div>
-                <div className={styles.field}>
-                  <label htmlFor="passcode-confirm" className={styles.label}>
-                    パスコード確認（もう一度入力）
-                  </label>
-                  <div className={styles.passwordInputWrap}>
-                    <input
-                      id="passcode-confirm"
-                      type={showInitPassword ? 'text' : 'password'}
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      className={`${styles.input} ${styles.passwordInput}`}
-                      value={passcodeConfirm}
-                      onChange={(e) => { setPasscodeConfirm(e.target.value.replace(/[^0-9]/g, '')); setPasscodeError(''); }}
-                      maxLength={6}
-                      placeholder="••••"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                </div>
-                {passcodeError && (
-                  <p className={styles.error} role="alert">
-                    {passcodeError}
-                  </p>
-                )}
-                <div className={styles.formActions}>
-                  <button
-                    className={styles.cancelBtn}
-                    onClick={() => {
-                      setShowPasscodeForm(false);
-                      setPasscode('');
-                      setPasscodeConfirm('');
-                      setPasscodeError('');
-                    }}
-                  >
-                    キャンセル
-                  </button>
-                  <button className={styles.primaryBtn} onClick={handleSetPasscode}>
-                    設定する
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+          <button
+            type="button"
+            className={styles.actionBtn}
+            onClick={() => setPasscodeSheetOpen(true)}
+          >
+            パスコードを設定
+          </button>
         )}
       </section>
 
@@ -837,262 +601,13 @@ export function SettingsPage() {
         </div>
       )}
 
-      {/* 修正2: パスコード認証・解除・変更ダイアログ */}
-      {authModalMode !== 'none' && (
-        <div
-          className={styles.dialogOverlay}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="auth-dialog-title"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setAuthModalMode('none');
-              setAuthStep('verify');
-              setVerifyInput('');
-              setVerifyError('');
-            }
-          }}
-        >
-          <div className={styles.dialogContent}>
-            {authStep === 'verify' && (
-              <>
-                <h3 id="auth-dialog-title" className={styles.dialogTitle}>
-                  {authModalMode === 'remove' ? 'パスコードの解除' : 'パスコードの変更'}
-                </h3>
-                <p className={styles.dialogDescription}>
-                  現在のパスコードを入力してください。
-                </p>
-
-                {lockRemainingSeconds > 0 && (
-                  <div className={styles.lockAlert} role="alert">
-                    連続で誤入力したため一時ロックされています。
-                    <br />
-                    あと <strong>{lockRemainingSeconds}</strong> 秒お待ちください。
-                  </div>
-                )}
-
-                <div className={styles.dialogForm}>
-                  <div className={styles.dialogField}>
-                    <label htmlFor="verify-passcode-input" className={styles.dialogLabel}>
-                      現在のパスコード <span style={{ color: 'var(--color-error)' }}>*</span>
-                    </label>
-                    <div className={styles.passwordInputWrap}>
-                      <input
-                        id="verify-passcode-input"
-                        type={showVerifyPassword ? 'text' : 'password'}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        autoFocus
-                        disabled={lockRemainingSeconds > 0}
-                        value={verifyInput}
-                        onChange={(e) => {
-                          setVerifyInput(e.target.value.replace(/[^0-9]/g, ''));
-                          setVerifyError('');
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleVerifyCurrentPasscode();
-                          }
-                        }}
-                        placeholder="••••"
-                        className={`${styles.dialogInput} ${styles.passwordInput} ${
-                          verifyError ? styles.dialogInputError : ''
-                        }`}
-                        aria-invalid={!!verifyError}
-                        aria-describedby={verifyError ? 'verify-passcode-error' : undefined}
-                      />
-                      <button
-                        type="button"
-                        className={styles.passwordToggleBtn}
-                        onClick={() => setShowVerifyPassword(!showVerifyPassword)}
-                        aria-label={showVerifyPassword ? 'パスコードを隠す' : 'パスコードを表示する'}
-                      >
-                        {showVerifyPassword ? '非表示' : '表示'}
-                      </button>
-                    </div>
-                    {verifyError && (
-                      <p id="verify-passcode-error" className={styles.fieldError} role="alert">
-                        {verifyError}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className={styles.dialogActions}>
-                    <button
-                      type="button"
-                      className={styles.cancelBtn}
-                      onClick={() => {
-                        setAuthModalMode('none');
-                        setVerifyInput('');
-                        setVerifyError('');
-                      }}
-                    >
-                      キャンセル
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.submitBtn}
-                      disabled={verifyInput.length < 4 || lockRemainingSeconds > 0}
-                      onClick={handleVerifyCurrentPasscode}
-                    >
-                      次へ
-                    </button>
-                  </div>
-
-                  {/* パスコードを忘れた場合 */}
-                  <div className={styles.forgotBox}>
-                    <p className={styles.forgotTitle}>パスコードを忘れた場合</p>
-                    <p className={styles.forgotText}>
-                      パスコードを忘れるとデータを復元できません。アプリを再度利用するには「すべてのデータを削除して初期化」するしか方法がありません。
-                    </p>
-                    <button
-                      type="button"
-                      className={styles.forgotResetBtn}
-                      onClick={() => {
-                        setAuthModalMode('none');
-                        setShowDeleteConfirm1(true);
-                      }}
-                    >
-                      すべてのデータを削除して初期化...
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {authStep === 'confirm_remove' && (
-              <>
-                <h3 id="auth-dialog-title" className={styles.dialogTitle}>
-                  パスコード解除の確認
-                </h3>
-                <p className={styles.dialogDescription} style={{ color: 'var(--color-error)' }}>
-                  パスコードを解除すると、データは暗号化されずに保存されます。解除しますか？
-                </p>
-
-                <div className={styles.dialogActions} style={{ marginTop: 'var(--space-6)' }}>
-                  <button
-                    type="button"
-                    className={styles.cancelBtn}
-                    onClick={() => {
-                      setAuthModalMode('none');
-                      setAuthStep('verify');
-                      setVerifiedPasscode('');
-                    }}
-                  >
-                    キャンセル
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.dangerBtn}
-                    onClick={handleExecuteRemovePasscode}
-                  >
-                    解除する
-                  </button>
-                </div>
-              </>
-            )}
-
-            {authStep === 'new_passcode' && (
-              <>
-                <h3 id="auth-dialog-title" className={styles.dialogTitle}>
-                  新しいパスコードを設定
-                </h3>
-                <div className={styles.dialogForm}>
-                  <div className={styles.dialogField}>
-                    <label htmlFor="new-passcode-input" className={styles.dialogLabel}>
-                      新しいパスコード（4〜6桁の数字） <span style={{ color: 'var(--color-error)' }}>*</span>
-                    </label>
-                    <div className={styles.passwordInputWrap}>
-                      <input
-                        id="new-passcode-input"
-                        type={showNewPassword ? 'text' : 'password'}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        autoFocus
-                        value={newPasscode}
-                        onChange={(e) => {
-                          setNewPasscode(e.target.value.replace(/[^0-9]/g, ''));
-                          setNewPasscodeError('');
-                        }}
-                        placeholder="••••"
-                        className={`${styles.dialogInput} ${styles.passwordInput}`}
-                      />
-                      <button
-                        type="button"
-                        className={styles.passwordToggleBtn}
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        aria-label={showNewPassword ? 'パスコードを隠す' : 'パスコードを表示する'}
-                      >
-                        {showNewPassword ? '非表示' : '表示'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className={styles.dialogField}>
-                    <label htmlFor="new-passcode-confirm-input" className={styles.dialogLabel}>
-                      パスコード確認（もう一度入力） <span style={{ color: 'var(--color-error)' }}>*</span>
-                    </label>
-                    <div className={styles.passwordInputWrap}>
-                      <input
-                        id="new-passcode-confirm-input"
-                        type={showNewPassword ? 'text' : 'password'}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        value={newPasscodeConfirm}
-                        onChange={(e) => {
-                          setNewPasscodeConfirm(e.target.value.replace(/[^0-9]/g, ''));
-                          setNewPasscodeError('');
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleSaveNewPasscode();
-                          }
-                        }}
-                        placeholder="••••"
-                        className={`${styles.dialogInput} ${styles.passwordInput}`}
-                      />
-                    </div>
-                    {newPasscodeError && (
-                      <p className={styles.fieldError} role="alert">
-                        {newPasscodeError}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className={styles.dialogActions}>
-                    <button
-                      type="button"
-                      className={styles.cancelBtn}
-                      onClick={() => {
-                        setAuthModalMode('none');
-                        setAuthStep('verify');
-                        setNewPasscode('');
-                        setNewPasscodeConfirm('');
-                        setVerifiedPasscode('');
-                      }}
-                    >
-                      キャンセル
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.submitBtn}
-                      disabled={newPasscode.length < 4}
-                      onClick={handleSaveNewPasscode}
-                    >
-                      変更する
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      {/* パスコードボトムシート */}
+      <PasscodeSheet
+        isOpen={passcodeSheetOpen}
+        onClose={() => setPasscodeSheetOpen(false)}
+        initialTab={passcodeSheetTab}
+        onForgotPassword={() => setShowDeleteConfirm1(true)}
+      />
 
       {/* サンプルデータ確認ダイアログ */}
       <ConfirmDialog

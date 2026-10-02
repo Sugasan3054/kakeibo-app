@@ -3,7 +3,7 @@ import { db } from '../../db/database';
 import type { Account, Transaction, Category, TransactionKind } from '../../db/models';
 import { getTodayString } from '../../utils/date';
 import { validateAmount, validateMemo, sanitizeForStorage } from '../../utils/validation';
-import { Modal } from '../../components/Modal/Modal';
+import { Sheet } from '../../components/Sheet/Sheet';
 import { SegmentControl } from '../../components/SegmentControl/SegmentControl';
 import { Calendar } from '../../components/Calendar/Calendar';
 import { Icon } from '../../components/Icon/Icon';
@@ -139,7 +139,7 @@ export function TransactionInputModal({
     : '収支を入力';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
+    <Sheet isOpen={isOpen} onClose={onClose} title={title} size="lg">
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         {!editTransaction && (
           <SegmentControl
@@ -274,6 +274,6 @@ export function TransactionInputModal({
           {editTransaction ? '更新する' : '保存する'}
         </button>
       </form>
-    </Modal>
+    </Sheet>
   );
 }
