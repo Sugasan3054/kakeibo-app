@@ -120,7 +120,7 @@ export async function deleteCategoryWithRelocation(
   destinationCategoryId: string | null
 ): Promise<{ movedCount: number }> {
   let movedCount = 0;
-  await db.transaction('rw', [db.categories, db.transactions, db.budgets], async () => {
+  await db.transaction('rw', [db.categories, db.transactions], async () => {
     if (destinationCategoryId) {
       const txs = await db.transactions
         .where('categoryId')
@@ -153,9 +153,6 @@ export async function deleteCategoryWithRelocation(
           });
       }
     }
-
-    // 紐づく予算を削除
-    await db.budgets.where('categoryId').equals(targetCategoryId).delete();
 
     // 分類を削除
     await db.categories.delete(targetCategoryId);

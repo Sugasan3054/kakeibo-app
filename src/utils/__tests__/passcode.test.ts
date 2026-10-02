@@ -100,7 +100,6 @@ describe('Passcode Lock and Decryption Utilities', () => {
         passcodeHash: hash,
         passcodeSalt: salt,
         passcodeIv: null,
-        expectedMonthlyIncome: null,
         initialLaunchDone: true,
         passcodeFailedAttempts: 0,
         passcodeLockedUntil: null,
@@ -145,7 +144,6 @@ describe('Passcode Lock and Decryption Utilities', () => {
         passcodeHash: hash,
         passcodeSalt: salt,
         passcodeIv: null,
-        expectedMonthlyIncome: null,
         initialLaunchDone: true,
         passcodeFailedAttempts: 3,
         passcodeLockedUntil: null,
@@ -199,7 +197,6 @@ describe('Passcode Lock and Decryption Utilities', () => {
         passcodeHash: hash,
         passcodeSalt: salt,
         passcodeIv: null,
-        expectedMonthlyIncome: null,
         initialLaunchDone: true,
         passcodeFailedAttempts: 2,
         passcodeLockedUntil: null,
@@ -247,7 +244,6 @@ describe('Passcode Lock and Decryption Utilities', () => {
         passcodeHash: hash,
         passcodeSalt: salt,
         passcodeIv: null,
-        expectedMonthlyIncome: null,
         initialLaunchDone: true,
       });
 

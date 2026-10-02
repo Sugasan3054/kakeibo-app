@@ -35,11 +35,9 @@ export interface Category {
   createdAt?: string;
 }
 
-export interface Budget {
-  id: string;
-  categoryId: string;
-  monthlyAmount: number | null; // null可、nullは予算未設定
-  updatedAt: string;
+export interface NotificationRecord {
+  version: string; // バージョン番号をIDとする
+  readAt: string; // 既読にした日時（ISO 8601）
 }
 
 export interface Settings {
@@ -49,7 +47,6 @@ export interface Settings {
   passcodeHash: string | null;
   passcodeSalt: string | null;
   passcodeIv: string | null;
-  expectedMonthlyIncome: number | null; // null可（想定月収）
   initialLaunchDone: boolean;
   passcodeFailedAttempts?: number; // 連続誤入力回数
   passcodeLockedUntil?: string | null; // ロック解除予定日時（ISO文字列）

@@ -1,5 +1,5 @@
 import { db } from '../db/database';
-import type { Account, Transaction, Budget, Category } from '../db/models';
+import type { Account, Transaction, Category } from '../db/models';
 import { seedDatabase } from '../db/seed';
 
 export async function insertSampleData(): Promise<void> {
@@ -60,30 +60,7 @@ export async function insertSampleData(): Promise<void> {
   const catSalary = findCat('給与', 'income');
   const catSide = findCat('副業', 'income');
 
-  // 2. 予算設定
-  const budgets: Budget[] = [];
-  if (catFood) budgets.push({ id: crypto.randomUUID(), categoryId: catFood, monthlyAmount: 38000, updatedAt: nowIso });
-  if (catDaily) budgets.push({ id: crypto.randomUUID(), categoryId: catDaily, monthlyAmount: 8000, updatedAt: nowIso });
-  if (catTransit) budgets.push({ id: crypto.randomUUID(), categoryId: catTransit, monthlyAmount: 10000, updatedAt: nowIso });
-  if (catUtility) budgets.push({ id: crypto.randomUUID(), categoryId: catUtility, monthlyAmount: 14000, updatedAt: nowIso });
-  if (catEntertainment) budgets.push({ id: crypto.randomUUID(), categoryId: catEntertainment, monthlyAmount: 12000, updatedAt: nowIso });
-
-  for (const b of budgets) {
-    const existing = await db.budgets.where('categoryId').equals(b.categoryId).first();
-    if (existing) {
-      await db.budgets.update(existing.id, { monthlyAmount: b.monthlyAmount, updatedAt: nowIso });
-    } else {
-      await db.budgets.add(b);
-    }
-  }
-
-  // 想定月収を設定
-  const currentSettings = await db.settings.get('user_settings');
-  if (currentSettings) {
-    await db.settings.update('user_settings', { expectedMonthlyIncome: 260000 });
-  }
-
-  // 3. 過去3ヶ月分の取引30件程度を生成
+  // 2. 過去3ヶ月分の取引30件程度を生成
   const transactions: Transaction[] = [];
 
   const addDays = (baseDate: Date, dayOffset: number): string => {
@@ -157,7 +134,6 @@ export async function resetAllData(): Promise<void> {
   await Promise.all([
     db.transactions.clear(),
     db.accounts.clear(),
-    db.budgets.clear(),
     db.settings.clear(),
   ]);
 

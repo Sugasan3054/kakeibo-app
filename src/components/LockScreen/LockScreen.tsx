@@ -165,7 +165,7 @@ export function LockScreen({ onUnlock }: LockScreenProps) {
       <ConfirmDialog
         isOpen={showResetConfirm1}
         title="すべてのデータを初期化"
-        message="パスコードを忘れた場合、データを復元することはできません。登録されたすべての口座、取引履歴、カスタム分類、予算、設定が削除され、初期状態に戻ります。本当によろしいですか？"
+        message="パスコードを忘れた場合、データを復元することはできません。登録されたすべての口座、取引履歴、カスタム分類、設定が削除され、初期状態に戻ります。本当によろしいですか？"
         confirmLabel="次へ（最終確認）"
         cancelLabel="キャンセル"
         variant="danger"

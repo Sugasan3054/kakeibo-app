@@ -1,11 +1,11 @@
 import Dexie, { type Table } from 'dexie';
-import type { Account, Transaction, Category, Budget, Settings } from './models';
+import type { Account, Transaction, Category, Settings, NotificationRecord } from './models';
 
 export class KakeiboDB extends Dexie {
   accounts!: Table<Account, string>;
   transactions!: Table<Transaction, string>;
   categories!: Table<Category, string>;
-  budgets!: Table<Budget, string>;
+  notifications!: Table<NotificationRecord, string>;
   settings!: Table<Settings, string>;
 
   constructor() {
@@ -42,6 +42,22 @@ export class KakeiboDB extends Dexie {
             window.matchMedia &&
             window.matchMedia('(prefers-color-scheme: dark)').matches;
           settings.theme = prefersDark ? 'dark' : 'light';
+        }
+      });
+    });
+
+    this.version(3).stores({
+      accounts: 'id, name, type, createdAt',
+      transactions: 'id, kind, accountId, categoryId, date, createdAt',
+      categories: 'id, kind, order, isCustom',
+      budgets: null,
+      notifications: 'version, readAt',
+      settings: 'id',
+    }).upgrade(async (tx) => {
+      // settings から expectedMonthlyIncome を削除
+      await tx.table('settings').toCollection().modify((settings: any) => {
+        if ('expectedMonthlyIncome' in settings) {
+          delete settings.expectedMonthlyIncome;
         }
       });
     });

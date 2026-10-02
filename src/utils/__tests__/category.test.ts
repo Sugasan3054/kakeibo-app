@@ -8,7 +8,7 @@ import {
   sortCategories,
   deleteCategoryWithRelocation,
 } from '../category';
-import type { Category, Transaction, Budget } from '../../db/models';
+import type { Category, Transaction } from '../../db/models';
 
 describe('Category utility and management', () => {
   describe('Name normalization and duplicate checking', () => {
@@ -82,10 +82,9 @@ describe('Category utility and management', () => {
     beforeEach(async () => {
       await db.categories.clear();
       await db.transactions.clear();
-      await db.budgets.clear();
     });
 
-    it('relocates transactions to destination category and deletes budgets when category is deleted', async () => {
+    it('relocates transactions to destination category when category is deleted', async () => {
       const catToDelete: Category = {
         id: 'cat-to-delete',
         kind: 'expense',
@@ -128,14 +127,6 @@ describe('Category utility and management', () => {
       };
       await db.transactions.bulkAdd([tx1, tx2]);
 
-      const budget: Budget = {
-        id: 'bud1',
-        categoryId: 'cat-to-delete',
-        monthlyAmount: 5000,
-        updatedAt: '2026-09-28T00:00:00Z',
-      };
-      await db.budgets.add(budget);
-
       // 削除実行
       const { movedCount } = await deleteCategoryWithRelocation('cat-to-delete', 'cat-other');
       expect(movedCount).toBe(2);
@@ -147,10 +138,6 @@ describe('Category utility and management', () => {
       // 取引が移行先カテゴリに変更されていること
       const updatedTxs = await db.transactions.where('id').anyOf(['tx1', 'tx2']).toArray();
       expect(updatedTxs.every((t) => t.categoryId === 'cat-other')).toBe(true);
-
-      // 予算も削除されていること
-      const remainingBudget = await db.budgets.where('categoryId').equals('cat-to-delete').first();
-      expect(remainingBudget).toBeUndefined();
     });
   });
 });

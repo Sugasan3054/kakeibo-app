@@ -27,7 +27,6 @@ describe('Passcode State Lifecycle: 未設定 → 設定済み → 変更 → �
       passcodeHash: null,
       passcodeSalt: null,
       passcodeIv: null,
-      expectedMonthlyIncome: null,
       initialLaunchDone: true,
       passcodeFailedAttempts: 0,
       passcodeLockedUntil: null,

@@ -1,5 +1,6 @@
 import { db } from './database';
 import type { Category, Settings, Account } from './models';
+import { RELEASES } from '../data/releases';
 
 const EXPENSE_CATEGORIES: Omit<Category, 'id'>[] = [
   { kind: 'expense', name: '食費', color: '#ef4444', order: 1 },
@@ -75,9 +76,17 @@ export async function seedDatabase(): Promise<void> {
       passcodeHash: null,
       passcodeSalt: null,
       passcodeIv: null,
-      expectedMonthlyIncome: null,
       initialLaunchDone: false,
     };
     await db.settings.add(defaultSettings);
+
+    // 初回起動時の端末では、過去の更新内容をすべて既読として登録する
+    const initialNotifications = RELEASES.map((r) => ({
+      version: r.version,
+      readAt: new Date().toISOString(),
+    }));
+    if (initialNotifications.length > 0) {
+      await db.notifications.bulkPut(initialNotifications);
+    }
   }
 }

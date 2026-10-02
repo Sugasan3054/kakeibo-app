@@ -14,7 +14,6 @@ export const DEFAULT_SETTINGS: Settings = {
   passcodeHash: null,
   passcodeSalt: null,
   passcodeIv: null,
-  expectedMonthlyIncome: null,
   initialLaunchDone: false,
   passcodeFailedAttempts: 0,
   passcodeLockedUntil: null,

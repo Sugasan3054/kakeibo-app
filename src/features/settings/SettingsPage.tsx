@@ -16,6 +16,7 @@ import {
 } from '../../utils/category';
 import type { Category } from '../../db/models';
 import { GITHUB_URL, ISSUES_URL } from '../../config/links';
+import { LATEST_RELEASE, formatReleaseDate } from '../../data/releases';
 import styles from './SettingsPage.module.css';
 
 export function SettingsPage() {
@@ -145,18 +146,17 @@ export function SettingsPage() {
 
   const handleExport = useCallback(async () => {
     try {
-      const [accounts, transactions, cats, budgets, settingsData] = await Promise.all([
+      const [accounts, transactions, cats, settingsData] = await Promise.all([
         db.accounts.toArray(),
         db.transactions.toArray(),
         db.categories.toArray(),
-        db.budgets.toArray(),
         db.settings.toArray(),
       ]);
 
       const exportData = {
         version: 1,
         exportedAt: new Date().toISOString(),
-        data: { accounts, transactions, categories: cats, budgets, settings: settingsData },
+        data: { accounts, transactions, categories: cats, settings: settingsData },
       };
 
       const jsonStr = JSON.stringify(exportData, null, 2);
@@ -191,19 +191,17 @@ export function SettingsPage() {
           return;
         }
 
-        const { accounts, transactions, categories: importedCats, budgets } = importData.data;
+        const { accounts, transactions, categories: importedCats } = importData.data;
 
         await db.transaction('rw',
-          db.accounts, db.transactions, db.categories, db.budgets,
+          db.accounts, db.transactions, db.categories,
           async () => {
             await db.accounts.clear();
             await db.transactions.clear();
             await db.categories.clear();
-            await db.budgets.clear();
             if (accounts) await db.accounts.bulkAdd(accounts);
             if (transactions) await db.transactions.bulkAdd(transactions);
             if (importedCats) await db.categories.bulkAdd(importedCats);
-            if (budgets) await db.budgets.bulkAdd(budgets);
           }
         );
 
@@ -390,7 +388,10 @@ export function SettingsPage() {
             <div className={styles.versionDetails}>
               <span className={styles.versionLabel}>バージョン</span>
               <span className={styles.versionValue}>
-                {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'} ({typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'})
+                バージョン {LATEST_RELEASE.version}（{formatReleaseDate(LATEST_RELEASE.date)}）
+              </span>
+              <span className={styles.commitHash}>
+                {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
               </span>
             </div>
             <button
@@ -446,7 +447,7 @@ export function SettingsPage() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>テスト用</h2>
         <p className={styles.description}>
-          アプリの検証用機能です。口座・過去3か月の取引・予算を含むサンプルデータの投入や、全データの初期化が行えます。
+          アプリの検証用機能です。口座・過去3か月の取引を含むサンプルデータの投入や、全データの初期化が行えます。
         </p>
         <div className={styles.testActions}>
           <button
@@ -568,7 +569,7 @@ export function SettingsPage() {
       <ConfirmDialog
         isOpen={showDirectDeleteConfirm && !!deletingCategory}
         title={`分類「${deletingCategory?.name}」の削除`}
-        message="この分類を削除しますか？設定済みの予算も同時に削除されます。"
+        message="この分類を削除しますか？"
         confirmLabel="削除する"
         variant="danger"
         onConfirm={handleConfirmDeleteCategory}
@@ -644,7 +645,7 @@ export function SettingsPage() {
       <ConfirmDialog
         isOpen={showSampleConfirm}
         title="サンプルデータの投入"
-        message="口座3件、過去3か月分の取引履歴、予算設定のサンプルデータを追加します。よろしいですか？"
+        message="口座3件、過去3か月分の取引履歴のサンプルデータを追加します。よろしいですか？"
         confirmLabel="投入する"
         onConfirm={async () => {
           try {
@@ -664,7 +665,7 @@ export function SettingsPage() {
       <ConfirmDialog
         isOpen={showDeleteConfirm1}
         title="すべてのデータを削除（確認 1/2）"
-        message="登録済みの口座、取引履歴、予算、設定がすべて消去されます。本当に削除しますか？"
+        message="登録済みの口座、取引履歴、設定がすべて消去されます。本当に削除しますか？"
         confirmLabel="次へ進む"
         variant="danger"
         onConfirm={() => {
