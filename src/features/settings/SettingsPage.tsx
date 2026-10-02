@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../db/database';
 import { useSettings } from '../../hooks/useSettings';
+import { usePwaUpdate } from '../../contexts/PwaUpdateContext';
 import { useToast } from '../../components/Toast/Toast';
 import { Icon } from '../../components/Icon/Icon';
 import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog';
@@ -21,6 +22,7 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const { settings, updateSettings } = useSettings();
   const { showToast } = useToast();
+  const { checkForUpdate, isCheckingUpdate, updateStatusMessage } = usePwaUpdate();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryTab, setCategoryTab] = useState<'expense' | 'income'>('expense');
@@ -384,10 +386,39 @@ export function SettingsPage() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>アプリ情報</h2>
         <div className={styles.infoList}>
-          <div className={styles.infoRow}>
-            <span>バージョン</span>
-            <span>{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'} ({typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'})</span>
+          <div className={styles.versionRow}>
+            <div className={styles.versionDetails}>
+              <span className={styles.versionLabel}>バージョン</span>
+              <span className={styles.versionValue}>
+                {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'} ({typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'})
+              </span>
+            </div>
+            <button
+              type="button"
+              className={styles.checkUpdateBtn}
+              onClick={() => checkForUpdate()}
+              disabled={isCheckingUpdate}
+              aria-label="新しいバージョンがあるか確認する"
+            >
+              <Icon
+                name="update"
+                size={14}
+                className={isCheckingUpdate ? styles.spinIcon : ''}
+                aria-hidden="true"
+              />
+              <span>{isCheckingUpdate ? '確認中…' : '更新を確認'}</span>
+            </button>
           </div>
+          {updateStatusMessage && (
+            <div className={styles.updateStatusMessage} role="status">
+              <Icon
+                name={updateStatusMessage.includes('新しい') ? 'attention' : 'check'}
+                size={14}
+                aria-hidden="true"
+              />
+              <span>{updateStatusMessage}</span>
+            </div>
+          )}
           <div className={styles.infoRow}>
             <span>データ保存先</span>
             <span>端末内（IndexedDB）</span>

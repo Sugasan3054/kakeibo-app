@@ -58,10 +58,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     setToasts((prev) => [...prev, toast]);
 
-    const timer = setTimeout(() => {
-      removeToast(id);
-    }, toast.duration);
-    timersRef.current.set(id, timer);
+    if (toast.duration > 0) {
+      const timer = setTimeout(() => {
+        removeToast(id);
+      }, toast.duration);
+      timersRef.current.set(id, timer);
+    }
   }, [removeToast]);
 
   useEffect(() => {

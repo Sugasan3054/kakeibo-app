@@ -8,6 +8,7 @@ import { SegmentControl } from '../../components/SegmentControl/SegmentControl';
 import { Calendar } from '../../components/Calendar/Calendar';
 import { Icon } from '../../components/Icon/Icon';
 import { useToast } from '../../components/Toast/Toast';
+import { usePwaUpdate } from '../../contexts/PwaUpdateContext';
 import { CategorySelect } from '../../components/CategorySelect/CategorySelect';
 import styles from './TransactionInputModal.module.css';
 
@@ -25,6 +26,15 @@ export function TransactionInputModal({
   onSaved,
 }: TransactionInputModalProps) {
   const { showToast } = useToast();
+  const { setIsInputting } = usePwaUpdate();
+
+  // 収支入力中はPWA更新トーストを保留
+  useEffect(() => {
+    setIsInputting(isOpen);
+    return () => {
+      setIsInputting(false);
+    };
+  }, [isOpen, setIsInputting]);
   const [kind, setKind] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');

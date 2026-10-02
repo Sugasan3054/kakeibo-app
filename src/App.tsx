@@ -4,6 +4,7 @@ import { seedDatabase } from './db/seed';
 import { useSettings } from './hooks/useSettings';
 import { useTheme } from './hooks/useTheme';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { PwaUpdateProvider } from './contexts/PwaUpdateContext';
 import { ToastProvider } from './components/Toast/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { AppShell } from './components/Layout/AppShell';
@@ -72,10 +73,12 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <SettingsProvider>
-          <PwaPrompt />
-          <AppContent />
-        </SettingsProvider>
+        <PwaUpdateProvider>
+          <SettingsProvider>
+            <PwaPrompt />
+            <AppContent />
+          </SettingsProvider>
+        </PwaUpdateProvider>
       </ToastProvider>
     </ErrorBoundary>
   );
