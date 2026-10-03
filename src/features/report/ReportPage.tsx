@@ -3,7 +3,7 @@ import { db } from '../../db/database';
 import type { Transaction, Category } from '../../db/models';
 import { calculateMonthlyExpenseByCategory, calculateMonthlyIncomeByCategory, calculateMonthlyExpenseTotal, calculateMonthlyIncomeTotal } from '../../utils/calculation';
 import { getCurrentYearMonth, getPreviousMonth, getNextMonth, formatYearMonth } from '../../utils/date';
-import { formatYen, calcPercentage } from '../../utils/format';
+import { formatYen, formatYenAria, calcPercentage } from '../../utils/format';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Loading } from '../../components/Loading/Loading';
 import { Icon } from '../../components/Icon/Icon';
@@ -183,16 +183,29 @@ export function ReportPage() {
           <section className={styles.balanceSection} aria-label="月間収支">
             <div className={styles.balanceRow}>
               <span>収入合計</span>
-              <span className={styles.incomeColor}>+{formatYen(incomeTotal)}</span>
+              <span
+                className={styles.incomeColor}
+                aria-label={formatYenAria(incomeTotal, { showPlusSign: true })}
+              >
+                {formatYen(incomeTotal, { showPlusSign: true })}
+              </span>
             </div>
             <div className={styles.balanceRow}>
               <span>支出合計</span>
-              <span className={styles.expenseColor}>−{formatYen(expenseTotal)}</span>
+              <span
+                className={styles.expenseColor}
+                aria-label={formatYenAria(-expenseTotal)}
+              >
+                {formatYen(-expenseTotal)}
+              </span>
             </div>
             <div className={`${styles.balanceRow} ${styles.balanceTotal}`}>
               <span>収支</span>
-              <span className={incomeTotal - expenseTotal >= 0 ? styles.incomeColor : styles.expenseColor}>
-                {incomeTotal - expenseTotal >= 0 ? '+' : '−'}{formatYen(Math.abs(incomeTotal - expenseTotal))}
+              <span
+                className={incomeTotal - expenseTotal >= 0 ? styles.incomeColor : styles.expenseColor}
+                aria-label={formatYenAria(incomeTotal - expenseTotal, { showPlusSign: true })}
+              >
+                {formatYen(incomeTotal - expenseTotal, { showPlusSign: true })}
               </span>
             </div>
           </section>

@@ -17,11 +17,42 @@ export function formatSignedAmount(amount: number, kind: 'expense' | 'income' | 
   return `−¥${formatAmount(Math.abs(amount))}`;
 }
 
+export interface FormatYenOptions {
+  showPlusSign?: boolean;
+}
+
 /**
  * 金額表示用（¥記号付き）
+ * - マイナスの場合は「−¥2,200」（U+2212）の形式（記号は¥の前）
+ * - options.showPlusSign が true かつプラスの場合は「+¥2,200」
+ * - それ以外は「¥2,200」
  */
-export function formatYen(amount: number): string {
-  return `¥${formatAmount(amount)}`;
+export function formatYen(amount: number, options?: FormatYenOptions): string {
+  const formatted = Math.abs(amount).toLocaleString('ja-JP');
+  if (amount < 0) {
+    return `−¥${formatted}`;
+  }
+  if (amount > 0 && options?.showPlusSign) {
+    return `+¥${formatted}`;
+  }
+  return `¥${formatted}`;
+}
+
+/**
+ * スクリーンリーダー読み上げ用
+ * - マイナスの場合：「マイナス2,200円」
+ * - プラスかつshowPlusSignの場合：「プラス2,200円」
+ * - それ以外：「2,200円」
+ */
+export function formatYenAria(amount: number, options?: FormatYenOptions): string {
+  const formatted = Math.abs(amount).toLocaleString('ja-JP');
+  if (amount < 0) {
+    return `マイナス${formatted}円`;
+  }
+  if (amount > 0 && options?.showPlusSign) {
+    return `プラス${formatted}円`;
+  }
+  return `${formatted}円`;
 }
 
 /**

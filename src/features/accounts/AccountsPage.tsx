@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../db/database';
 import type { Account, Transaction } from '../../db/models';
 import { ACCOUNT_TYPE_LABELS, ACCOUNT_TYPE_ICONS } from '../../db/models';
-import { calculateAccountBalance } from '../../utils/calculation';
-import { formatYen } from '../../utils/format';
+import { calcAccountBalance, calcTotalAssets } from '../../utils/calculation';
+import { formatYen, formatYenAria } from '../../utils/format';
 import { Modal } from '../../components/Modal/Modal';
 import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
@@ -138,9 +138,7 @@ export function AccountsPage() {
     }
   };
 
-  const totalAssets = accounts.reduce((sum, acc) => {
-    return sum + calculateAccountBalance(acc, transactions);
-  }, 0);
+  const totalAssets = calcTotalAssets(accounts, transactions);
 
   if (loading) return <Loading />;
 
@@ -154,9 +152,14 @@ export function AccountsPage() {
         </button>
       </header>
 
-      <div className={styles.totalCard}>
+      <div className={`${styles.totalCard} ${totalAssets < 0 ? styles.negativeTotalCard : ''}`}>
         <span className={styles.totalLabel}>総資産</span>
-        <span className={styles.totalAmount}>{formatYen(totalAssets)}</span>
+        <span
+          className={styles.totalAmount}
+          aria-label={formatYenAria(totalAssets)}
+        >
+          {formatYen(totalAssets)}
+        </span>
       </div>
 
       {accounts.length === 0 ? (
@@ -169,10 +172,14 @@ export function AccountsPage() {
       ) : (
         <ul className={styles.list} aria-label="口座一覧">
           {accounts.map((account) => {
-            const balance = calculateAccountBalance(account, transactions);
+            const balance = calcAccountBalance(account, transactions);
+            const isNegative = balance < 0;
             const iconName = (ACCOUNT_TYPE_ICONS[account.type] || 'bank') as any;
             return (
-              <li key={account.id} className={styles.card}>
+              <li
+                key={account.id}
+                className={`${styles.card} ${isNegative ? styles.cardNegative : ''}`}
+              >
                 <div className={styles.cardMain}>
                   <div className={styles.cardIcon} style={{ backgroundColor: account.color + '20', color: account.color }}>
                     <Icon name={iconName} variant="line" size={24} aria-hidden="true" />
@@ -181,8 +188,19 @@ export function AccountsPage() {
                     <span className={styles.cardName}>{account.name}</span>
                     <span className={styles.cardType}>{ACCOUNT_TYPE_LABELS[account.type]}</span>
                   </div>
-                  <span className={styles.cardBalance}>{formatYen(balance)}</span>
+                  <span
+                    className={`${styles.cardBalance} ${isNegative ? styles.negativeBalance : ''}`}
+                    aria-label={formatYenAria(balance)}
+                  >
+                    {formatYen(balance)}
+                  </span>
                 </div>
+                {isNegative && (
+                  <div className={styles.negativeNotice} role="note">
+                    <Icon name="attention" variant="line" size={16} aria-hidden="true" />
+                    <span>残高がマイナスです。初期残高の設定や残高調整を確認してください</span>
+                  </div>
+                )}
                 <div className={styles.cardActions}>
                   <button
                     className={styles.actionBtn}
@@ -236,7 +254,7 @@ export function AccountsPage() {
         {adjustingAccount && (
           <AdjustBalanceForm
             account={adjustingAccount}
-            currentBalance={calculateAccountBalance(adjustingAccount, transactions)}
+            currentBalance={calcAccountBalance(adjustingAccount, transactions)}
             onSave={handleAdjustSave}
             onCancel={() => setAdjustingAccount(null)}
           />

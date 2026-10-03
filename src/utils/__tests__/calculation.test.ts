@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+  calcAccountBalance,
+  calcTotalAssets,
   calculateAccountBalance,
   calculateTotalAssets,
   calculateMonthlyExpenseByCategory,
@@ -83,8 +85,88 @@ describe('calculation utils', () => {
 
   it('calculates account balance correctly', () => {
     // 100000 - 1500 - 3500 + 250000 - 500 - 2000 = 342500
-    const balance = calculateAccountBalance(mockAccount, mockTransactions);
+    const balance = calcAccountBalance(mockAccount, mockTransactions);
     expect(balance).toBe(342500);
+    // 互換性チェック
+    expect(calculateAccountBalance(mockAccount, mockTransactions)).toBe(342500);
+  });
+
+  it('calculates negative account balance correctly (初期残高0円に収入3000円・支出5200円)', () => {
+    const wallet: Account = {
+      id: 'acc-wallet',
+      name: '財布',
+      type: 'cash',
+      initialBalance: 0,
+      color: '#10b981',
+      icon: 'wallet',
+      createdAt: '2024-01-01',
+      updatedAt: '2024-01-01',
+    };
+    const walletTxs: Transaction[] = [
+      {
+        id: 'tx-w1',
+        date: '2024-05-01',
+        kind: 'income',
+        amount: 3000,
+        categoryId: null,
+        accountId: 'acc-wallet',
+        memo: '臨時収入',
+        createdAt: '2024-05-01T10:00:00Z',
+        updatedAt: '2024-05-01T10:00:00Z',
+      },
+      {
+        id: 'tx-w2',
+        date: '2024-05-02',
+        kind: 'expense',
+        amount: 5200,
+        categoryId: null,
+        accountId: 'acc-wallet',
+        memo: '買い物',
+        createdAt: '2024-05-02T10:00:00Z',
+        updatedAt: '2024-05-02T10:00:00Z',
+      },
+    ];
+    // 0 + 3000 - 5200 = -2200
+    expect(calcAccountBalance(wallet, walletTxs)).toBe(-2200);
+  });
+
+  it('calculates negative account balance with adjustment', () => {
+    const bank: Account = {
+      id: 'acc-b',
+      name: '銀行',
+      type: 'bank',
+      initialBalance: 1000,
+      color: '#3b82f6',
+      icon: 'bank',
+      createdAt: '2024-01-01',
+      updatedAt: '2024-01-01',
+    };
+    const txs: Transaction[] = [
+      {
+        id: 'tx-b1',
+        date: '2024-05-01',
+        kind: 'expense',
+        amount: 3000,
+        categoryId: null,
+        accountId: 'acc-b',
+        memo: '引き落とし',
+        createdAt: '2024-05-01T10:00:00Z',
+        updatedAt: '2024-05-01T10:00:00Z',
+      },
+      {
+        id: 'tx-b2',
+        date: '2024-05-02',
+        kind: 'adjustment',
+        amount: -500,
+        categoryId: null,
+        accountId: 'acc-b',
+        memo: '手数料調整',
+        createdAt: '2024-05-02T10:00:00Z',
+        updatedAt: '2024-05-02T10:00:00Z',
+      },
+    ];
+    // 1000 - 3000 + (-500) = -2500
+    expect(calcAccountBalance(bank, txs)).toBe(-2500);
   });
 
   it('calculates total assets correctly across all accounts', () => {
@@ -98,8 +180,63 @@ describe('calculation utils', () => {
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     };
-    const total = calculateTotalAssets([mockAccount, acc2], mockTransactions);
+    const total = calcTotalAssets([mockAccount, acc2], mockTransactions);
     expect(total).toBe(342500 + 5000);
+    // 互換性チェック
+    expect(calculateTotalAssets([mockAccount, acc2], mockTransactions)).toBe(342500 + 5000);
+  });
+
+  it('calculates negative total assets correctly when balance sum is negative', () => {
+    const wallet: Account = {
+      id: 'acc-wallet',
+      name: '財布',
+      type: 'cash',
+      initialBalance: 0,
+      color: '#10b981',
+      icon: 'wallet',
+      createdAt: '2024-01-01',
+      updatedAt: '2024-01-01',
+    };
+    const bank: Account = {
+      id: 'acc-bank',
+      name: '銀行',
+      type: 'bank',
+      initialBalance: 1000,
+      color: '#3b82f6',
+      icon: 'bank',
+      createdAt: '2024-01-01',
+      updatedAt: '2024-01-01',
+    };
+    const txs: Transaction[] = [
+      {
+        id: 'tx-1',
+        date: '2024-05-01',
+        kind: 'income',
+        amount: 3000,
+        categoryId: null,
+        accountId: 'acc-wallet',
+        memo: '',
+        createdAt: '2024-05-01T10:00:00Z',
+        updatedAt: '2024-05-01T10:00:00Z',
+      },
+      {
+        id: 'tx-2',
+        date: '2024-05-02',
+        kind: 'expense',
+        amount: 5200,
+        categoryId: null,
+        accountId: 'acc-wallet',
+        memo: '',
+        createdAt: '2024-05-02T10:00:00Z',
+        updatedAt: '2024-05-02T10:00:00Z',
+      },
+    ];
+    // wallet: -2200, bank: 1000 -> total: -1200
+    expect(calcTotalAssets([wallet, bank], txs)).toBe(-1200);
+  });
+
+  it('returns 0 for calcTotalAssets when accounts list is empty', () => {
+    expect(calcTotalAssets([], [])).toBe(0);
   });
 
   it('aggregates monthly expenses by category', () => {

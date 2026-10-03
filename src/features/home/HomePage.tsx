@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../../db/database';
 import type { Transaction, Category, Account } from '../../db/models';
 import {
-  calculateTotalAssets,
+  calcTotalAssets,
   calculateMonthlyExpenseByCategory,
   calculateMonthlyExpenseTotal,
   calculateMonthlyIncomeTotal,
 } from '../../utils/calculation';
 import { getCurrentYearMonth, formatYearMonth } from '../../utils/date';
-import { formatYen, calcPercentage } from '../../utils/format';
+import { formatYen, formatYenAria, calcPercentage } from '../../utils/format';
 import { CountUp } from '../../components/CountUp/CountUp';
 import { Loading } from '../../components/Loading/Loading';
 import { Icon } from '../../components/Icon/Icon';
@@ -61,7 +61,7 @@ export function HomePage() {
 
   // 総資産
   const totalAssets = useMemo(
-    () => calculateTotalAssets(accounts, transactions),
+    () => calcTotalAssets(accounts, transactions),
     [accounts, transactions]
   );
 
@@ -135,7 +135,10 @@ export function HomePage() {
       </header>
 
       {/* 総資産カード */}
-      <section className={styles.assetCard} aria-label="総資産">
+      <section
+        className={`${styles.assetCard} ${totalAssets < 0 ? styles.negativeAssetCard : ''}`}
+        aria-label="総資産"
+      >
         <span className={styles.assetLabel}>総資産</span>
         <div className={styles.assetAmount}>
           <CountUp end={totalAssets} prefix="¥" className={styles.assetValue} />
@@ -165,8 +168,11 @@ export function HomePage() {
                 monthlyNetTotal >= 0 ? styles.income : styles.expense
               }`}
             >
-              {monthlyNetTotal >= 0 ? '+¥' : '−¥'}
-              <CountUp end={Math.abs(monthlyNetTotal)} />
+              <CountUp
+                end={monthlyNetTotal}
+                prefix="¥"
+                showPlusSign
+              />
             </span>
           </div>
         </div>
@@ -189,7 +195,12 @@ export function HomePage() {
                 centerContent={
                   <div className={styles.chartCenter}>
                     <span className={styles.chartCenterLabel}>今月の支出</span>
-                    <span className={styles.chartCenterAmount}>{formatYen(monthlyExpenseTotal)}</span>
+                    <span
+                      className={styles.chartCenterAmount}
+                      aria-label={formatYenAria(monthlyExpenseTotal)}
+                    >
+                      {formatYen(monthlyExpenseTotal)}
+                    </span>
                   </div>
                 }
               />

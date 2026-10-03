@@ -108,6 +108,16 @@
   box-shadow: var(--shadow-lg);
 }
 
+.assetCard.negativeAssetCard {
+  background: linear-gradient(135deg, #d1242f, #e85965);
+  box-shadow: 0 4px 24px rgba(209, 36, 47, 0.35);
+}
+
+[data-theme='dark'] .assetCard.negativeAssetCard {
+  background: linear-gradient(135deg, #5a1e24, #7a2830);
+}
+
+
 .assetCard::before {
   content: '';
   position: absolute;
@@ -205,20 +215,21 @@
 }
 
 .chartCenter {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   text-align: center;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
   pointer-events: none;
+  width: 100px;
 }
 
 .chartCenterLabel {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .chartCenterAmount {

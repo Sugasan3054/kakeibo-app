@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { formatYenAria } from '../../utils/format';
 
 interface CountUpProps {
   end: number;
@@ -8,6 +9,8 @@ interface CountUpProps {
   suffix?: string;
   className?: string;
   separator?: string;
+  showPlusSign?: boolean;
+  ariaLabel?: string;
 }
 
 export function CountUp({
@@ -17,6 +20,8 @@ export function CountUp({
   suffix = '',
   className,
   separator = ',',
+  showPlusSign = false,
+  ariaLabel,
 }: CountUpProps) {
   const [current, setCurrent] = useState(0);
   const prefersReducedMotion = useReducedMotion();
@@ -61,11 +66,24 @@ export function CountUp({
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, separator);
 
-  const displayValue = current < 0 ? `−${formatted}` : formatted;
+  let sign = '';
+  if (current < 0) {
+    sign = '−'; // U+2212
+  } else if (current > 0 && showPlusSign) {
+    sign = '+';
+  }
+
+  // 符号（−や+）は prefix（¥等）の前に置く（例: −¥2,200）
+  const displayText = `${sign}${prefix}${formatted}${suffix}`;
+
+  const resolvedAriaLabel = ariaLabel ?? (prefix === '¥'
+    ? formatYenAria(current, { showPlusSign })
+    : displayText);
 
   return (
-    <span className={className} aria-label={`${prefix}${displayValue}${suffix}`}>
-      {prefix}{displayValue}{suffix}
+    <span className={className} aria-label={resolvedAriaLabel}>
+      {displayText}
     </span>
   );
 }
+

@@ -3,6 +3,7 @@ import {
   formatAmount,
   formatSignedAmount,
   formatYen,
+  formatYenAria,
   parseAmountInput,
   calcPercentage,
 } from '../format';
@@ -21,8 +22,35 @@ describe('format utils', () => {
     expect(formatSignedAmount(-500, 'adjustment')).toBe('−¥500');
   });
 
-  it('formats yen currency display', () => {
+  it('formats yen currency display with proper sign and options', () => {
+    // プラス
+    expect(formatYen(2200)).toBe('¥2,200');
     expect(formatYen(5000)).toBe('¥5,000');
+
+    // マイナス（全角相当のマイナス記号 U+2212、¥の前に配置）
+    expect(formatYen(-2200)).toBe('−¥2,200');
+    expect(formatYen(-2200).charCodeAt(0)).toBe(0x2212);
+
+    // 0
+    expect(formatYen(0)).toBe('¥0');
+
+    // 100万円以上
+    expect(formatYen(1000000)).toBe('¥1,000,000');
+    expect(formatYen(1500000)).toBe('¥1,500,000');
+    expect(formatYen(-1500000)).toBe('−¥1,500,000');
+
+    // showPlusSign の指定あり
+    expect(formatYen(2200, { showPlusSign: true })).toBe('+¥2,200');
+    expect(formatYen(-2200, { showPlusSign: true })).toBe('−¥2,200');
+    expect(formatYen(0, { showPlusSign: true })).toBe('¥0');
+  });
+
+  it('formats yen currency for screen reader aria-label', () => {
+    expect(formatYenAria(2200)).toBe('2,200円');
+    expect(formatYenAria(-2200)).toBe('マイナス2,200円');
+    expect(formatYenAria(0)).toBe('0円');
+    expect(formatYenAria(2200, { showPlusSign: true })).toBe('プラス2,200円');
+    expect(formatYenAria(-2200, { showPlusSign: true })).toBe('マイナス2,200円');
   });
 
   it('parses user amount input strings with commas and symbols', () => {

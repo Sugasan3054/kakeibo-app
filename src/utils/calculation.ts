@@ -4,7 +4,7 @@ import type { Transaction, Account, Category } from '../db/models';
  * 口座の現在残高を計算する
  * 現在残高 = 初期残高 + 収入 - 支出 + 残高調整
  */
-export function calculateAccountBalance(account: Account, transactions: Transaction[]): number {
+export function calcAccountBalance(account: Account, transactions: Transaction[]): number {
   const accountTransactions = transactions.filter((t) => t.accountId === account.id);
   let balance = account.initialBalance;
 
@@ -28,11 +28,16 @@ export function calculateAccountBalance(account: Account, transactions: Transact
 /**
  * 全口座の総資産を計算する
  */
-export function calculateTotalAssets(accounts: Account[], transactions: Transaction[]): number {
+export function calcTotalAssets(accounts: Account[], transactions: Transaction[]): number {
   return accounts.reduce((total, account) => {
-    return total + calculateAccountBalance(account, transactions);
+    return total + calcAccountBalance(account, transactions);
   }, 0);
 }
+
+// 互換性維持のためのエイリアス
+export const calculateAccountBalance = calcAccountBalance;
+export const calculateTotalAssets = calcTotalAssets;
+
 
 /**
  * 指定月の支出合計を分類別に集計する

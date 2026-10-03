@@ -50,6 +50,16 @@
   box-shadow: var(--shadow-lg);
 }
 
+.totalCard.negativeTotalCard {
+  background: linear-gradient(135deg, #d1242f, #e85965);
+  box-shadow: 0 4px 16px rgba(209, 36, 47, 0.3);
+}
+
+[data-theme='dark'] .totalCard.negativeTotalCard {
+  background: linear-gradient(135deg, #5a1e24, #7a2830);
+}
+
+
 .totalLabel {
   font-size: var(--font-size-sm);
   opacity: 0.85;
@@ -127,6 +137,37 @@
   color: var(--color-text-primary);
   flex-shrink: 0;
 }
+
+.negativeBalance {
+  color: var(--color-error) !important;
+}
+
+.card.cardNegative {
+  border-color: rgba(209, 36, 47, 0.4);
+}
+
+[data-theme='dark'] .card.cardNegative {
+  border-color: rgba(248, 81, 73, 0.4);
+}
+
+.negativeNotice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-error-light);
+  color: var(--color-error);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+[data-theme='dark'] .negativeNotice {
+  background-color: rgba(209, 36, 47, 0.15);
+  color: #ff7b72;
+}
+
 
 .cardActions {
   display: flex;
